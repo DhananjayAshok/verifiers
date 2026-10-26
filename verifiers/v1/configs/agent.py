@@ -115,10 +115,13 @@ def resolve_agent(
     for configured agent roles."""
     merged = spec.sampling if sampling is None else sampling
     if sampling is not None and spec.sampling is not None:
+        # A None in the seat's sampling never overrides the run's value: a config reloaded
+        # from its resolved dump (e.g. on resume) carries every field, the unset ones as
+        # null, and pydantic counts those as set.
         merged = sampling.model_copy(
             update=deep_merge(
                 sampling.model_dump(exclude_unset=True),
-                spec.sampling.model_dump(exclude_unset=True),
+                spec.sampling.model_dump(exclude_unset=True, exclude_none=True),
             )
         )
     return spec.model_copy(
